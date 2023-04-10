@@ -1,0 +1,16 @@
+[metadata]
+name = ctap2vault
+author = Glyph
+author_email = code@glyph.im
+description = CTAP2 hmac-secret extension Keyring backend
+long_description = file:README.rst
+url = https://github.com/glyph/ctap2vault
+classifiers =
+	Intended Audience :: Developers
+	License :: OSI Approved :: MIT License
+	Programming Language :: Python :: 3
+	Programming Language :: Python :: 3 :: Only
+
+[options.entry_points]
+keyring.backends =
+	ctap2 = ctap2vault
