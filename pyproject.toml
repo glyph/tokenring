@@ -1,8 +1,8 @@
-[metadata]
-name = ctap2vault
-author = Glyph
-author_email = code@glyph.im
-description = CTAP2 hmac-secret extension Keyring backend
+[project]
+name = "ctap2vault"
+author = "Glyph"
+author_email = "code@glyph.im"
+description = "CTAP2 hmac-secret extension Keyring backend"
 long_description = file:README.rst
 url = https://github.com/glyph/ctap2vault
 classifiers =
