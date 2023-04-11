@@ -2,20 +2,23 @@ from __future__ import annotations
 
 import os
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass
 from getpass import getpass
 from json import dump, dumps, load, loads
 from os import fsync
 from pathlib import Path
-from typing import ClassVar, IO, Iterable, List, NoReturn, Optional, Sequence, TYPE_CHECKING, TypedDict
+from threading import Event, Thread
+from typing import Callable, ClassVar, IO, Iterable, Iterator, List, NoReturn, Optional, Sequence, TYPE_CHECKING, TypedDict
 from uuid import uuid4
 
-from fido2.client import Fido2Client, UserInteraction
+from fido2.client import ClientError, Fido2Client, UserInteraction
 from fido2.cose import ES256
 from fido2.ctap2.pin import ClientPin
 from fido2.hid import CtapHidDevice
 from fido2.webauthn import AttestedCredentialData, AuthenticatorAttestationResponse, PublicKeyCredentialCreationOptions, PublicKeyCredentialDescriptor, PublicKeyCredentialParameters, PublicKeyCredentialRequestOptions, PublicKeyCredentialRpEntity, PublicKeyCredentialType, PublicKeyCredentialUserEntity
 from keyring.backend import KeyringBackend
+from keyring.util.platform_ import data_root
 
 
 try:
@@ -28,23 +31,114 @@ except ImportError:
 from cryptography.fernet import Fernet
 from base64 import urlsafe_b64encode as encode_fernet_key
 
+if TYPE_CHECKING:
+    AnyCtapDevice = CtapHidDevice | CtapPcscDevice
 
-def enumerate_devices() -> Iterable[CtapHidDevice | CtapPcscDevice]:
+
+def enumerate_devices() -> Iterable[AnyCtapDevice]:
     yield from CtapHidDevice.list_devices()
     if have_pcsc:
         yield from CtapPcscDevice.list_devices()
 
 
+class UnknownPurpose(Exception):
+    """
+    The authenticator requested user-presence for an unknown purpose.
+    """
+
+@dataclass
 class ConsoleInteraction(UserInteraction):
+    _purpose: str | None = None
+
+    @contextmanager
+    def purpose(self, description: str) -> Iterator[None]:
+        """
+        Temporarily set the purpose of this interaction.  Any prompts that
+        occur without a purpose will raise an exception.
+        """
+        was, self._purpose = self._purpose, description
+        try:
+            yield None
+        finally:
+            self._purpose = was
+
     def prompt_up(self) -> None:
-        print("\nTouch your authenticator device now...\n")
+        """
+        User-Presence Prompt.
+        """
+        if self._purpose is None:
+            raise UnknownPurpose()
+        print(f"Touch your authenticator to {self._purpose}")
 
-    def request_pin(self, permissions: ClientPin.PERMISSION, rp_id: Optional[str]):
-        return getpass("Enter PIN: ")
+    def request_pin(
+        self, permissions: ClientPin.PERMISSION, rp_id: Optional[str]
+    ) -> str:
+        """
+        PIN entry required; return the PIN.
+        """
+        return getpass(f"Enter PIN to {self._purpose}: ")
 
-    def request_uv(self, permissions: ClientPin.PERMISSION, rp_id: Optional[str]):
-        print("User Verification required.")
-        return True
+    def request_uv(
+        self, permissions: ClientPin.PERMISSION, rp_id: Optional[str]
+    ) -> bool:
+        raise RuntimeError("User verification should not be required.")
+
+
+def console_chooser(
+    clients: Sequence[tuple[Fido2Client, AnyCtapDevice]]
+) -> Fido2Client:
+    """
+    Select between different client devices we've discovered.
+    """
+    for idx, (client, device) in enumerate(clients):
+        print(
+            f"{1+idx}) {device.product_name} {device.serial_number} {getattr(getattr(device, 'descriptor', None), 'path', None)}"
+        )
+
+    while True:
+        value = input("> ")
+        try:
+            result = int(value)
+        except ValueError:
+            print("Please enter a number.")
+        else:
+            try:
+                return clients[result - 1][0]
+            except IndexError:
+                print("Please enter a number in range.")
+
+
+def up_chooser(clients: Sequence[Fido2Client]) -> Fido2Client:
+    """
+    Choose a client from the given list of clients by prompting for user
+    presence on one of them.  Does not work because of U{this bug
+    <https://github.com/Yubico/python-fido2/issues/184>}.
+    """
+    cancel = Event()
+    selected: Fido2Client | None = None
+
+    def select(client: Fido2Client) -> None:
+        nonlocal selected
+        try:
+            client.selection(cancel)
+            selected = client
+        except ClientError as e:
+            if e.code != ClientError.ERR.TIMEOUT:
+                raise
+            else:
+                return
+        cancel.set()
+
+    threads = []
+    for client in clients:
+        t = Thread(target=select, args=[client])
+        threads.append(t)
+        t.start()
+    for t in threads:
+        t.join()
+    if selected is None:
+        raise NoAuthenticator("user did not choose an authenticator")
+    return selected
 
 
 class NoAuthenticator(Exception):
@@ -53,18 +147,44 @@ class NoAuthenticator(Exception):
     """
 
 
-def locate_client() -> Fido2Client:
+def enumerate_clients(interaction: UserInteraction) -> Iterable[tuple[Fido2Client, AnyCtapDevice]]:
     # Locate a device
     for dev in enumerate_devices():
-        client = Fido2Client(
+        yield (
+            Fido2Client(
+                dev,
+                "https://hardware.keychain.glyph.im",
+                user_interaction=interaction,
+            ),
             dev,
-            "https://hardware.keychain.glyph.im",
-            user_interaction=ConsoleInteraction(),
         )
-        if "hmac-secret" in client.info.extensions:
-            return client
 
-    raise NoAuthenticator("No Authenticator with the HmacSecret extension found!")
+
+def extension_required(client: Fido2Client) -> bool:
+    """
+    Client filter for clients that support the hmac-secret extension.
+    """
+    has_extension = "hmac-secret" in client.info.extensions
+    return has_extension
+
+
+def select_client(
+    interaction: UserInteraction,
+    filters: Sequence[Callable[[Fido2Client], bool]],
+    choose: Callable[[Sequence[tuple[Fido2Client, AnyCtapDevice]]], Fido2Client],
+) -> Fido2Client:
+    """
+    Prompt the user to choose a device to authenticate with, if necessary.
+    """
+    eligible = []
+    for client, device in enumerate_clients(interaction):
+        if all(each(client) for each in filters):
+            eligible.append((client, device))
+    if not eligible:
+        raise NoAuthenticator("No eligible authenticators found.")
+    if len(eligible) == 1:
+        return eligible[0][0]
+    return choose(eligible)
 
 
 SerializedCredentialHandle = dict[str, str]
@@ -282,6 +402,7 @@ class Vault:
     A vault where users may store multiple credentials.
     """
 
+    interaction: ConsoleInteraction
     client: Fido2Client
     vault_handle: KeyHandle
     handles: dict[tuple[str, str], tuple[KeyHandle, str]]
@@ -308,7 +429,7 @@ class Vault:
 
     @classmethod
     def deserialize(
-        cls, client: Fido2Client, obj: SerializedVault, where: Path
+        cls, interaction: ConsoleInteraction, client: Fido2Client, obj: SerializedVault, where: Path
     ) -> Vault:
         """
         Deserialize the given vault from a fido2client.
@@ -318,6 +439,7 @@ class Vault:
         unlocked = vault_handle.decrypt_text(obj["data"])
         handlesobj = loads(unlocked)
         self = Vault(
+            interaction,
             client,
             vault_handle,
             handles={
@@ -329,32 +451,45 @@ class Vault:
         return self
 
     @classmethod
-    def create(cls, client: Fido2Client, where: Path) -> Vault:
+    def create(cls, where: Path) -> Vault:
         """
         Create a new Vault and save it in the given IO.
         """
-        cred = CredentialHandle.new_credential(client)
+        interaction = ConsoleInteraction()
+        client = select_client(interaction, [extension_required], console_chooser)
+        with interaction.purpose("create the vault"):
+            cred = CredentialHandle.new_credential(client)
         vault_key = KeyHandle.new(cred)
-        vault_key.remember_key()
-        self = Vault(client, vault_key, {}, where.absolute())
+        with interaction.purpose("open the vault we just created"):
+            vault_key.remember_key()
+        self = Vault(interaction, client, vault_key, {}, where.absolute())
         self.save()
         return self
 
     @classmethod
-    def load(cls, client: Fido2Client, where: Path) -> Vault:
+    def load(cls, where: Path) -> Vault:
         """
         Load an existing vault saved at a given path.
         """
+        where = where.absolute()
         with where.open("r") as f:
             contents = load(f)
-            print(contents)
-        return cls.deserialize(client, contents, where)
+        interaction = ConsoleInteraction()
+        while True:
+            client = select_client(interaction, [extension_required], console_chooser)
+            try:
+                with interaction.purpose(f"open the vault at {where.as_posix()}"):
+                    return cls.deserialize(interaction, client, contents, where)
+
+            except ClientError as ce:
+                if ce.code != ClientError.ERR.DEVICE_INELIGIBLE:
+                    raise ce
+                print("This is the wrong authenticator.  Try touching a different one.")
 
     def save(self) -> None:
         """
         Save the vault to secondary storage.
         """
-        print("saving vault...")
         # Be extra-careful about atomicity; we really do not want to have a
         # partial write happen here, as we'll lose the whole vault.
         temp = (
@@ -370,14 +505,14 @@ class Vault:
             fsync(f.fileno())
 
         temp.replace(self.storage_path)
-        print("saved.")
 
     def set_password(self, servicename: str, username: str, password: str) -> None:
         """
         Store a password for the tiven service and username.
         """
         handle = KeyHandle.new(self.vault_handle.credential)
-        ciphertext = handle.encrypt_text(password)
+        with self.interaction.purpose(f"encrypt the password for {servicename}/{username}"):
+            ciphertext = handle.encrypt_text(password)
         self.handles[servicename, username] = (handle, ciphertext)
         self.save()
 
@@ -386,7 +521,8 @@ class Vault:
         Retrieve a password.
         """
         handle, ciphertext = self.handles[servicename, username]
-        plaintext = handle.decrypt_text(ciphertext)
+        with self.interaction.purpose(f"decrypt the password for {servicename}/{username}"):
+            plaintext = handle.decrypt_text(ciphertext)
         return plaintext
 
     def delete_password(self, servicename: str, username: str) -> None:
@@ -396,15 +532,16 @@ class Vault:
         del self.handles[servicename, username]
         self.save()
 
-from keyring.util.platform_ import data_root
 
 @dataclass
 class LocalCTAP2KeyringBackend(KeyringBackend):
     """
     Keyring backend implementation for L{Vault}
     """
+
     vault: Vault | None = None
-    location: Path = Path(data_root / "keyring.ctap2vault")
+    location: Path = Path(data_root()) / "keyring.ctap2vault"
+    priority = 20
 
     def realize_vault(self) -> Vault:
         """
@@ -415,11 +552,10 @@ class LocalCTAP2KeyringBackend(KeyringBackend):
         # Ensure our location exists.
         self.location.parent.mkdir(parents=True, exist_ok=True)
         # XXX gotta choose the correct client
-        client = locate_client()
         if self.location.is_file():
-            self.vault = Vault.load(client, self.location)
+            self.vault = Vault.load(self.location)
         else:
-            self.vault = Vault.create(client, self.location)
+            self.vault = Vault.create(self.location)
         return self.vault
 
     def get_password(self, servicename: str, username: str) -> str:
@@ -434,20 +570,19 @@ if TYPE_CHECKING:
 
 
 def create_vault(filename: str) -> None:
-    client = locate_client()
-    Vault.create(client, Path(filename))
+    Vault.create(Path(filename))
+
 
 def store_in(filename: str) -> None:
-    client = locate_client()
-    vault = Vault.load(client, Path(filename))
+    vault = Vault.load(Path(filename))
     service = input("Service?")
     user = input("User?")
     password = getpass("Password?")
     vault.set_password(service, user, password)
 
+
 def cred_from_vault(filename: str) -> None:
-    client = locate_client()
-    vault = Vault.load(client, Path(filename))
+    vault = Vault.load(Path(filename))
     service = input("Service?")
     user = input("User?")
     print(vault.get_password(service, user))
