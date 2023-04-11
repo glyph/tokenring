@@ -15,17 +15,20 @@ if sys.platform == 'win32':
         flags = _winapi.PIPE_ACCESS_DUPLEX | _winapi.FILE_FLAG_OVERLAPPED
         if first:
             flags |= _winapi.FILE_FLAG_FIRST_PIPE_INSTANCE
-        return _winapi.CreateNamedPipe(
+        newnp = _winapi.CreateNamedPipe(
             self._address, flags,
             _winapi.PIPE_TYPE_MESSAGE | _winapi.PIPE_READMODE_MESSAGE |
             _winapi.PIPE_WAIT,
             _winapi.PIPE_UNLIMITED_INSTANCES, BUFSIZE, BUFSIZE,
             _winapi.NMPWAIT_WAIT_FOREVER,
-            win32security.ConvertStringSecurityDescriptorToSecurityDescriptor(
+            _winapi.NULL,
+        )
+        descriptor = win32security.ConvertStringSecurityDescriptorToSecurityDescriptor(
                 "D:(A;OICI;GRGW;;;AU)",
                 win32security.SDDL_REVISION_1
             )
-        )
+        win32security.SetSecurityInfo(newnp, win32security.SE_KERNEL_OBJECT, descriptor)
+        return newnp
     PipeListener._new_handle = _new_handle
 
 @main_requires_admin(cmdLine=[sys.executable, '-m', 'ctap2vault.multi_server'])
