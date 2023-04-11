@@ -5,7 +5,7 @@ from typing import Callable
 from keyring.backend import KeyringBackend
 
 from .multi_common import address, auth_key, family
-from ctap2vault.multi_commands import GetPassword, SetPassword
+from .multi_commands import GetPassword, SetPassword
 
 
 @dataclass

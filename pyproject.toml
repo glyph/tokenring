@@ -1,13 +1,13 @@
 [project]
-name = "ctap2vault"
+name = "tokenring"
 version = "2023.4.10"
 
 [metadata]
 author = "Glyph"
 author_email = "code@glyph.im"
-description = "CTAP2 hmac-secret extension Keyring backend"
+description = "A backend for the `keyring` module which uses a hardware token to require user presence for any secret access, by encrypting your vault and passwords as Fernet tokens."
 long_description = "file:README.rst"
-url = "https://github.com/glyph/ctap2vault"
+url = "https://github.com/glyph/tokenring"
 classifiers = [
 "Intended Audience :: Developers",
 "License :: OSI Approved :: MIT License",
@@ -16,5 +16,5 @@ classifiers = [
 ]
 
 [project.entry-points."keyring.backends"]
-ctap2local = "ctap2vault.local"
-ctap2background = "ctap2vault.multi_client"
+tokenlocal = "tokenring.local"
+tokenbackground = "tokenring.multi_client"

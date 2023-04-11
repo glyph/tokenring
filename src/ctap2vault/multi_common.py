@@ -10,13 +10,13 @@ keyringdir.mkdir(parents=True, exist_ok=True)
 if win32_edition() is not None:
     from getpass import getuser
     family = 'AF_PIPE'
-    address = fr"\\.\pipe\{getuser()}-Ctap2Vault"
+    address = fr"\\.\pipe\{getuser()}-TokenVault"
 else:
     from getpass import getuser
     family = 'AF_UNIX'
-    address = (keyringdir / "ctap2vault.socket").as_posix()
+    address = (keyringdir / "tokenring.socket").as_posix()
 
-secret_path = keyringdir / "ctap2vault.socket-secret"
+secret_path = keyringdir / "tokenring.socket-secret"
 if secret_path.is_file():
     auth_key = secret_path.read_bytes()
 else:

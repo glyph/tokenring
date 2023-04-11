@@ -43,7 +43,7 @@ from fido2.webauthn import (
 from keyring.backend import KeyringBackend
 from keyring.util.platform_ import data_root
 
-from ctap2vault.client import AnyFidoClient
+from .client import AnyFidoClient
 from fido2.client import ClientError, Fido2Client, UserInteraction, WindowsClient
 
 

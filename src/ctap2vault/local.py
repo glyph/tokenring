@@ -51,7 +51,7 @@ class LocalCTAP2KeyringBackend(KeyringBackend):
     """
 
     vault: Vault | None = None
-    location: Path = Path(data_root()) / "keyring.ctap2vault"
+    location: Path = Path(data_root()) / "keyring.tokenvault"
     priority = 20
 
     def realize_vault(self) -> Vault:

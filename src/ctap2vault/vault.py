@@ -42,9 +42,9 @@ from keyring.backend import KeyringBackend
 from keyring.util.platform_ import data_root
 
 from .interaction import ConsoleInteraction
-from ctap2vault.client import AnyFidoClient, extension_required, select_client
-from ctap2vault.handles import CredentialHandle, KeyHandle, SerializedKeyHandle
-from ctap2vault.interaction import console_chooser
+from .client import AnyFidoClient, extension_required, select_client
+from .handles import CredentialHandle, KeyHandle, SerializedKeyHandle
+from .interaction import console_chooser
 from fido2.client import ClientError, Fido2Client, UserInteraction, WindowsClient
 
 

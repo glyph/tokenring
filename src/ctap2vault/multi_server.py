@@ -5,6 +5,8 @@ from pyuac import main_requires_admin  # type:ignore[import]
 import sys
 from importlib import import_module
 
+from . import __name__ as relative_parent
+
 if sys.platform == "win32":
     from ._admin_pipe import _patch
     _patch()
@@ -15,7 +17,11 @@ if sys.platform == "win32":
 
 # https://github.com/Yubico/python-fido2/issues/185
 
-@main_requires_admin(cmdLine=[sys.executable, "-m", "ctap2vault.multi_server"])
+@main_requires_admin(
+    # Since we expect to run as `-m`, sys.argv looks like __file__ to Python,
+    # which means pyuac gets it wrong.
+    cmdLine=[sys.executable, "-m", f"{relative_parent}.multi_server"]
+)
 def main() -> None:
     with Listener(address=address, family=family, authkey=auth_key) as listener:
         while True:
