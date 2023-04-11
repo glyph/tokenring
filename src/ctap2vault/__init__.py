@@ -9,14 +9,36 @@ from json import dump, dumps, load, loads
 from os import fsync
 from pathlib import Path
 from threading import Event, Thread
-from typing import Callable, ClassVar, IO, Iterable, Iterator, List, NoReturn, Optional, Sequence, TYPE_CHECKING, TypedDict
+from typing import (
+    Callable,
+    ClassVar,
+    IO,
+    Iterable,
+    Iterator,
+    List,
+    NoReturn,
+    Optional,
+    Sequence,
+    TYPE_CHECKING,
+    TypedDict,
+)
 from uuid import uuid4
 
 from fido2.client import ClientError, Fido2Client, UserInteraction
 from fido2.cose import ES256
 from fido2.ctap2.pin import ClientPin
 from fido2.hid import CtapHidDevice
-from fido2.webauthn import AttestedCredentialData, AuthenticatorAttestationResponse, PublicKeyCredentialCreationOptions, PublicKeyCredentialDescriptor, PublicKeyCredentialParameters, PublicKeyCredentialRequestOptions, PublicKeyCredentialRpEntity, PublicKeyCredentialType, PublicKeyCredentialUserEntity
+from fido2.webauthn import (
+    AttestedCredentialData,
+    AuthenticatorAttestationResponse,
+    PublicKeyCredentialCreationOptions,
+    PublicKeyCredentialDescriptor,
+    PublicKeyCredentialParameters,
+    PublicKeyCredentialRequestOptions,
+    PublicKeyCredentialRpEntity,
+    PublicKeyCredentialType,
+    PublicKeyCredentialUserEntity,
+)
 from keyring.backend import KeyringBackend
 from keyring.util.platform_ import data_root
 
@@ -45,6 +67,7 @@ class UnknownPurpose(Exception):
     """
     The authenticator requested user-presence for an unknown purpose.
     """
+
 
 @dataclass
 class ConsoleInteraction(UserInteraction):
@@ -147,7 +170,9 @@ class NoAuthenticator(Exception):
     """
 
 
-def enumerate_clients(interaction: UserInteraction) -> Iterable[tuple[Fido2Client, AnyCtapDevice]]:
+def enumerate_clients(
+    interaction: UserInteraction,
+) -> Iterable[tuple[Fido2Client, AnyCtapDevice]]:
     # Locate a device
     for dev in enumerate_devices():
         yield (
@@ -429,7 +454,11 @@ class Vault:
 
     @classmethod
     def deserialize(
-        cls, interaction: ConsoleInteraction, client: Fido2Client, obj: SerializedVault, where: Path
+        cls,
+        interaction: ConsoleInteraction,
+        client: Fido2Client,
+        obj: SerializedVault,
+        where: Path,
     ) -> Vault:
         """
         Deserialize the given vault from a fido2client.
@@ -511,7 +540,9 @@ class Vault:
         Store a password for the tiven service and username.
         """
         handle = KeyHandle.new(self.vault_handle.credential)
-        with self.interaction.purpose(f"encrypt the password for {servicename}/{username}"):
+        with self.interaction.purpose(
+            f"encrypt the password for {servicename}/{username}"
+        ):
             ciphertext = handle.encrypt_text(password)
         self.handles[servicename, username] = (handle, ciphertext)
         self.save()
@@ -521,7 +552,9 @@ class Vault:
         Retrieve a password.
         """
         handle, ciphertext = self.handles[servicename, username]
-        with self.interaction.purpose(f"decrypt the password for {servicename}/{username}"):
+        with self.interaction.purpose(
+            f"decrypt the password for {servicename}/{username}"
+        ):
             plaintext = handle.decrypt_text(ciphertext)
         return plaintext
 
