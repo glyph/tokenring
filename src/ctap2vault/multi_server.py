@@ -27,7 +27,7 @@ if sys.platform == "win32":
             "D:(A;OICI;GRGW;;;AU)", win32security.SDDL_REVISION_1
         )
         attribs.SECURITY_DESCRIPTOR = descriptor
-        newnp = CreateNamedPipe(
+        newnp = int(CreateNamedPipe(
             self._address,
             flags,
             PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
@@ -36,7 +36,7 @@ if sys.platform == "win32":
             BUFSIZE,
             NMPWAIT_WAIT_FOREVER,
             attribs,
-        )
+        ))
         # newnp = _winapi.CreateNamedPipe(
         #     self._address, flags,
         #     _winapi.PIPE_TYPE_MESSAGE | _winapi.PIPE_READMODE_MESSAGE |
