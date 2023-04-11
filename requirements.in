@@ -1,3 +1,4 @@
 fido2
 cryptography
 keyring
+mypy
