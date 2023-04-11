@@ -3,55 +3,17 @@ from multiprocessing.connection import Listener
 from .multi_common import address, auth_key, family
 from pyuac import main_requires_admin  # type:ignore[import]
 import sys
-
+from importlib import import_module
 
 if sys.platform == "win32":
-    import win32security
-    import _winapi
-    from multiprocessing.connection import PipeListener, BUFSIZE
-    from win32pipe import (
-        CreateNamedPipe,
-        PIPE_TYPE_MESSAGE,
-        PIPE_READMODE_MESSAGE,
-        PIPE_WAIT,
-        PIPE_UNLIMITED_INSTANCES,
-        NMPWAIT_WAIT_FOREVER,
-    )
+    from ._admin_pipe import _patch
+    _patch()
 
-    def _new_handle(self: PipeListener, first: bool = False) -> object:
-        flags = _winapi.PIPE_ACCESS_DUPLEX | _winapi.FILE_FLAG_OVERLAPPED
-        if first:
-            flags |= _winapi.FILE_FLAG_FIRST_PIPE_INSTANCE
-        attribs = win32security.SECURITY_ATTRIBUTES()
-        descriptor = win32security.ConvertStringSecurityDescriptorToSecurityDescriptor(
-            "D:(A;OICI;GRGW;;;AU)", win32security.SDDL_REVISION_1
-        )
-        attribs.SECURITY_DESCRIPTOR = descriptor
-        pipeobj = CreateNamedPipe(
-            self._address,
-            flags,
-            PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
-            PIPE_UNLIMITED_INSTANCES,
-            BUFSIZE,
-            BUFSIZE,
-            NMPWAIT_WAIT_FOREVER,
-            attribs,
-        )
-        newnp = int(pipeobj)
-        pipeobj.Detach()
-        # newnp = _winapi.CreateNamedPipe(
-        #     self._address, flags,
-        #     _winapi.PIPE_TYPE_MESSAGE | _winapi.PIPE_READMODE_MESSAGE |
-        #     _winapi.PIPE_WAIT,
-        #     _winapi.PIPE_UNLIMITED_INSTANCES, BUFSIZE, BUFSIZE,
-        #     _winapi.NMPWAIT_WAIT_FOREVER,
-        #     # _winapi.NULL,
-        #     attribs
-        # )
-        return newnp
 
-    PipeListener._new_handle = _new_handle
+# Elevated permissions are currently required for the helper process to have
+# direct USB HID access because of this bug:
 
+# https://github.com/Yubico/python-fido2/issues/185
 
 @main_requires_admin(cmdLine=[sys.executable, "-m", "ctap2vault.multi_server"])
 def main() -> None:
@@ -66,10 +28,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    sys.exit()
     from sys import argv
-
-    print(argv)
+    from traceback import print_exc
     try:
         main()
-    finally:
-        input("hit enter to exit")
+    except BaseException:
+        print_exc()
+        input("hit 'enter' to terminate process\n")
