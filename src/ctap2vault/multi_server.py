@@ -7,8 +7,10 @@ import sys
 
 
 if sys.platform == 'win32':
-    def _new_handle(self, first=False):
-        import win32security
+    import win32security
+    import _winapi
+
+    def _new_handle(self: PipeListener, first: bool=False) -> object:
         flags = _winapi.PIPE_ACCESS_DUPLEX | _winapi.FILE_FLAG_OVERLAPPED
         if first:
             flags |= _winapi.FILE_FLAG_FIRST_PIPE_INSTANCE
