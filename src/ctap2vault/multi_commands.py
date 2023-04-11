@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from .local import LocalCTAP2KeyringBackend
 
 
-_global_vault: LocalCTAP2KeyringBackend | None
+_global_vault: LocalCTAP2KeyringBackend | None = None
 
 
 def get_vault() -> LocalCTAP2KeyringBackend:
