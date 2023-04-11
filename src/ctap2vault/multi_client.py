@@ -15,6 +15,7 @@ class BackgroundCTAP2KeyringBackend(KeyringBackend):
     """
 
     connection: Connection | None = None
+    priority: int = 25
 
     def realize_connection(self) -> Connection:
         """
