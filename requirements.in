@@ -3,3 +3,4 @@ cryptography
 keyring
 mypy
 pyuac
+types-pywin32

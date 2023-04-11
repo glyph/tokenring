@@ -32,6 +32,8 @@ pyuac==0.0.3
     # via -r requirements.in
 tee==0.0.3
     # via pyuac
+types-pywin32==306.0.0.1
+    # via -r requirements.in
 typing-extensions==4.5.0
     # via mypy
 zipp==3.15.0

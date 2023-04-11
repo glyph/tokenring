@@ -45,9 +45,10 @@ from .vault import Vault
 
 
 @dataclass
-class LocalCTAP2KeyringBackend(KeyringBackend):
+class LocalTokenRing(KeyringBackend):
     """
-    Keyring backend implementation for L{Vault}
+    Keyring backend implementation for L{Vault} that runs in-process with the
+    requesting code.
     """
 
     vault: Vault | None = None
@@ -77,4 +78,4 @@ class LocalCTAP2KeyringBackend(KeyringBackend):
 
 
 if TYPE_CHECKING:
-    LocalCTAP2KeyringBackend()
+    LocalTokenRing()

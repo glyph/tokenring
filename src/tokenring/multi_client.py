@@ -9,9 +9,20 @@ from .multi_commands import GetPassword, SetPassword
 
 
 @dataclass
-class BackgroundCTAP2KeyringBackend(KeyringBackend):
+class BackgroundTokenRing(KeyringBackend):
     """
-    Connect to a process in the background which does the stuff.
+    Keyring backend that connects to a L{tokenring.local.LocalTokenRing}
+    running in a dedicated helper process, for two reasons:
+
+        1. to minimize the amount of code running in the UAC-elevated process
+           until we address the issue described in L{tokenring._admin_pipe}
+
+        2. to reduce the number of user-presence checks when repeated
+           authentications are require. Specifically, the vault itself needs a
+           UP/PIN check for unlock, but then, each credential will also need a
+           UP check.  With a background helper, you can unlock the vault for a
+           session and only touch the key once for each credential rather than
+           twice.
     """
 
     connection: Connection | None = None
@@ -26,13 +37,11 @@ class BackgroundCTAP2KeyringBackend(KeyringBackend):
         return self.connection
 
     def get_password(self, servicename: str, username: str) -> str:
-        print("bg get pw")
         conn = self.realize_connection()
         conn.send(GetPassword(servicename, username))
         return conn.recv()
 
     def set_password(self, servicename: str, username: str, password: str) -> None:
-        print("bg set pw")
         conn = self.realize_connection()
         conn.send(SetPassword(servicename, username, password))
         return conn.recv()
