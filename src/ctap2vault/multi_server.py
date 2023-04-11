@@ -1,4 +1,3 @@
-
 from multiprocessing.connection import Listener
 
 from .multi_common import address, auth_key, family
@@ -6,34 +5,53 @@ from pyuac import main_requires_admin  # type:ignore[import]
 import sys
 
 
-if sys.platform == 'win32':
+if sys.platform == "win32":
     import win32security
     import _winapi
     from multiprocessing.connection import PipeListener, BUFSIZE
+    from win32pipe import (
+        CreateNamedPipe,
+        PIPE_TYPE_MESSAGE,
+        PIPE_READMODE_MESSAGE,
+        PIPE_WAIT,
+        PIPE_UNLIMITED_INSTANCES,
+        NMPWAIT_WAIT_FOREVER,
+    )
 
-    def _new_handle(self: PipeListener, first: bool=False) -> object:
+    def _new_handle(self: PipeListener, first: bool = False) -> object:
         flags = _winapi.PIPE_ACCESS_DUPLEX | _winapi.FILE_FLAG_OVERLAPPED
         if first:
             flags |= _winapi.FILE_FLAG_FIRST_PIPE_INSTANCE
         attribs = win32security.SECURITY_ATTRIBUTES()
         descriptor = win32security.ConvertStringSecurityDescriptorToSecurityDescriptor(
-                "D:(A;OICI;GRGW;;;AU)",
-                win32security.SDDL_REVISION_1
-            )
-        attribs.SECURITY_DESCRIPTOR = descriptor
-        newnp = _winapi.CreateNamedPipe(
-            self._address, flags,
-            _winapi.PIPE_TYPE_MESSAGE | _winapi.PIPE_READMODE_MESSAGE |
-            _winapi.PIPE_WAIT,
-            _winapi.PIPE_UNLIMITED_INSTANCES, BUFSIZE, BUFSIZE,
-            _winapi.NMPWAIT_WAIT_FOREVER,
-            # _winapi.NULL,
-            attribs
+            "D:(A;OICI;GRGW;;;AU)", win32security.SDDL_REVISION_1
         )
+        attribs.SECURITY_DESCRIPTOR = descriptor
+        newnp = CreateNamedPipe(
+            self._address,
+            flags,
+            PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
+            PIPE_UNLIMITED_INSTANCES,
+            BUFSIZE,
+            BUFSIZE,
+            NMPWAIT_WAIT_FOREVER,
+            attribs,
+        )
+        # newnp = _winapi.CreateNamedPipe(
+        #     self._address, flags,
+        #     _winapi.PIPE_TYPE_MESSAGE | _winapi.PIPE_READMODE_MESSAGE |
+        #     _winapi.PIPE_WAIT,
+        #     _winapi.PIPE_UNLIMITED_INSTANCES, BUFSIZE, BUFSIZE,
+        #     _winapi.NMPWAIT_WAIT_FOREVER,
+        #     # _winapi.NULL,
+        #     attribs
+        # )
         return newnp
+
     PipeListener._new_handle = _new_handle
 
-@main_requires_admin(cmdLine=[sys.executable, '-m', 'ctap2vault.multi_server'])
+
+@main_requires_admin(cmdLine=[sys.executable, "-m", "ctap2vault.multi_server"])
 def main() -> None:
     with Listener(address=address, family=family, authkey=auth_key) as listener:
         while True:
@@ -45,8 +63,9 @@ def main() -> None:
                         break
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from sys import argv
+
     print(argv)
     try:
         main()
