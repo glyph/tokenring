@@ -9,7 +9,7 @@ import sys
 if sys.platform == 'win32':
     import win32security
     import _winapi
-    from multiprocessing.connection import PipeListener
+    from multiprocessing.connection import PipeListener, BUFSIZE
 
     def _new_handle(self: PipeListener, first: bool=False) -> object:
         flags = _winapi.PIPE_ACCESS_DUPLEX | _winapi.FILE_FLAG_OVERLAPPED
