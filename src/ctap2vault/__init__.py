@@ -24,7 +24,7 @@ from typing import (
 )
 from uuid import uuid4
 
-from fido2.client import ClientError, Fido2Client, UserInteraction
+from fido2.client import ClientError, Fido2Client, UserInteraction, WindowsClient
 from fido2.cose import ES256
 from fido2.ctap2.pin import ClientPin
 from fido2.hid import CtapHidDevice
@@ -41,6 +41,7 @@ from fido2.webauthn import (
 )
 from keyring.backend import KeyringBackend
 from keyring.util.platform_ import data_root
+import ctypes
 
 
 try:
@@ -108,14 +109,14 @@ class ConsoleInteraction(UserInteraction):
 
 
 def console_chooser(
-    clients: Sequence[tuple[Fido2Client, AnyCtapDevice]]
-) -> Fido2Client:
+    clients: Sequence[tuple[AnyFidoClient, AnyCtapDevice | None]]
+) -> AnyFidoClient:
     """
     Select between different client devices we've discovered.
     """
     for idx, (client, device) in enumerate(clients):
         print(
-            f"{1+idx}) {device.product_name} {device.serial_number} {getattr(getattr(device, 'descriptor', None), 'path', None)}"
+            f"{1+idx}) {getattr(device, 'product_name')} {getattr(device, 'serial_number')} {getattr(getattr(device, 'descriptor', None), 'path', None)}"
         )
 
     while True:
@@ -131,19 +132,22 @@ def console_chooser(
                 print("Please enter a number in range.")
 
 
-def up_chooser(clients: Sequence[Fido2Client]) -> Fido2Client:
+def up_chooser(clients: Sequence[AnyFidoClient]) -> AnyFidoClient:
     """
     Choose a client from the given list of clients by prompting for user
     presence on one of them.  Does not work because of U{this bug
     <https://github.com/Yubico/python-fido2/issues/184>}.
     """
     cancel = Event()
-    selected: Fido2Client | None = None
+    selected: AnyFidoClient | None = None
 
-    def select(client: Fido2Client) -> None:
+    def select(client: AnyFidoClient) -> None:
         nonlocal selected
         try:
-            client.selection(cancel)
+            # type ignore - not available on windows, but not necessary on
+            # windows
+            client.selection(cancel)  # type:ignore
+
             selected = client
         except ClientError as e:
             if e.code != ClientError.ERR.TIMEOUT:
@@ -169,10 +173,11 @@ class NoAuthenticator(Exception):
     Could not find an authenticator.
     """
 
+AnyFidoClient = Fido2Client | WindowsClient
 
 def enumerate_clients(
     interaction: UserInteraction,
-) -> Iterable[tuple[Fido2Client, AnyCtapDevice]]:
+) -> Iterable[tuple[AnyFidoClient, AnyCtapDevice | None]]:
     # Locate a device
     for dev in enumerate_devices():
         yield (
@@ -185,7 +190,7 @@ def enumerate_clients(
         )
 
 
-def extension_required(client: Fido2Client) -> bool:
+def extension_required(client: AnyFidoClient) -> bool:
     """
     Client filter for clients that support the hmac-secret extension.
     """
@@ -195,9 +200,9 @@ def extension_required(client: Fido2Client) -> bool:
 
 def select_client(
     interaction: UserInteraction,
-    filters: Sequence[Callable[[Fido2Client], bool]],
-    choose: Callable[[Sequence[tuple[Fido2Client, AnyCtapDevice]]], Fido2Client],
-) -> Fido2Client:
+    filters: Sequence[Callable[[AnyFidoClient], bool]],
+    choose: Callable[[Sequence[tuple[AnyFidoClient, AnyCtapDevice | None]]], AnyFidoClient],
+) -> AnyFidoClient:
     """
     Prompt the user to choose a device to authenticate with, if necessary.
     """
@@ -217,7 +222,7 @@ SerializedCredentialHandle = dict[str, str]
 
 @dataclass
 class CredentialHandle:
-    client: Fido2Client
+    client: AnyFidoClient
     credential_id: bytes
 
     # Static parameters that have to be the same, but can have fairly arbitrary
@@ -236,7 +241,7 @@ class CredentialHandle:
     ]
 
     @classmethod
-    def load(cls, client: Fido2Client, obj: dict[str, str]) -> CredentialHandle:
+    def load(cls, client: AnyFidoClient, obj: dict[str, str]) -> CredentialHandle:
         """
         Load a key handle from a JSON blob.
         """
@@ -247,7 +252,7 @@ class CredentialHandle:
         )
 
     @classmethod
-    def new_credential(cls, client: Fido2Client) -> CredentialHandle:
+    def new_credential(cls, client: AnyFidoClient) -> CredentialHandle:
         """
         Create a new credential for generating keys on the device.
         """
@@ -307,7 +312,7 @@ class CredentialHandle:
     @classmethod
     def deserialize(
         cls,
-        client: Fido2Client,
+        client: AnyFidoClient,
         obj: SerializedCredentialHandle,
     ) -> CredentialHandle:
         """
@@ -404,7 +409,7 @@ class KeyHandle:
         }
 
     @classmethod
-    def deserialize(cls, client: Fido2Client, obj: SerializedKeyHandle) -> KeyHandle:
+    def deserialize(cls, client: AnyFidoClient, obj: SerializedKeyHandle) -> KeyHandle:
         """ """
         return KeyHandle(
             credential=CredentialHandle.deserialize(client, obj["credential"]),
@@ -428,7 +433,7 @@ class Vault:
     """
 
     interaction: ConsoleInteraction
-    client: Fido2Client
+    client: AnyFidoClient
     vault_handle: KeyHandle
     handles: dict[tuple[str, str], tuple[KeyHandle, str]]
     storage_path: Path
@@ -456,7 +461,7 @@ class Vault:
     def deserialize(
         cls,
         interaction: ConsoleInteraction,
-        client: Fido2Client,
+        client: AnyFidoClient,
         obj: SerializedVault,
         where: Path,
     ) -> Vault:
