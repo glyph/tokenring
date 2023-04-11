@@ -16,4 +16,5 @@ classifiers = [
 ]
 
 [project.entry-points."keyring.backends"]
-ctap2 = "ctap2vault"
+ctap2local = "ctap2vault.local"
+ctap2background = "ctap2vault.multi_client"
