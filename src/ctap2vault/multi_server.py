@@ -9,6 +9,7 @@ import sys
 if sys.platform == 'win32':
     import win32security
     import _winapi
+    from multiprocessing.connection import PipeListener
 
     def _new_handle(self: PipeListener, first: bool=False) -> object:
         flags = _winapi.PIPE_ACCESS_DUPLEX | _winapi.FILE_FLAG_OVERLAPPED
@@ -25,7 +26,6 @@ if sys.platform == 'win32':
                 win32security.SDDL_REVISION_1
             )
         )
-    from multiprocessing.connection import PipeListener
     PipeListener._new_handle = _new_handle
 
 @main_requires_admin(cmdLine=[sys.executable, '-m', 'ctap2vault.multi_server'])
