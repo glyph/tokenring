@@ -175,15 +175,22 @@ class NoAuthenticator(Exception):
 
 AnyFidoClient = Fido2Client | WindowsClient
 
+fake_url = "https://hardware.keychain.glyph.im"
+
 def enumerate_clients(
     interaction: UserInteraction,
 ) -> Iterable[tuple[AnyFidoClient, AnyCtapDevice | None]]:
     # Locate a device
+    if WindowsClient.is_available():
+        is_admin: bool = ctypes.windll.shell32.IsUserAnAdmin()  # type:ignore
+        if not is_admin:
+            yield (WindowsClient(fake_url), None)
+            return
     for dev in enumerate_devices():
         yield (
             Fido2Client(
                 dev,
-                "https://hardware.keychain.glyph.im",
+                fake_url,
                 user_interaction=interaction,
             ),
             dev,
