@@ -26,11 +26,13 @@ class BackgroundCTAP2KeyringBackend(KeyringBackend):
         return self.connection
 
     def get_password(self, servicename: str, username: str) -> str:
+        print("bg get pw")
         conn = self.realize_connection()
         conn.send(GetPassword(servicename, username))
         return conn.recv()
 
     def set_password(self, servicename: str, username: str, password: str) -> None:
+        print("bg set pw")
         conn = self.realize_connection()
         conn.send(SetPassword(servicename, username, password))
         return conn.recv()
