@@ -41,6 +41,7 @@ from fido2.webauthn import (
 )
 from keyring.backend import KeyringBackend
 from keyring.util.platform_ import data_root
+import ctypes
 
 try:
     from fido2.pcsc import CtapPcscDevice
