@@ -3,9 +3,9 @@ from multiprocessing.connection import Listener
 
 from .multi_common import address, auth_key, family
 from pyuac import main_requires_admin  # type:ignore[import]
+import sys
 
-
-@main_requires_admin
+@main_requires_admin(cmdLine=[sys.executable, '-m', 'ctap2vault.multi_server'])
 def main() -> None:
     with Listener(address=address, family=family, authkey=auth_key) as listener:
         while True:
