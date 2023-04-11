@@ -1,15 +1,15 @@
 from dataclasses import dataclass
 
-from .local import LocalCTAP2KeyringBackend
+from .local import LocalTokenRing
 
 
-_global_vault: LocalCTAP2KeyringBackend | None = None
+_global_vault: LocalTokenRing | None = None
 
 
-def get_vault() -> LocalCTAP2KeyringBackend:
+def get_vault() -> LocalTokenRing:
     global _global_vault
     if _global_vault is None:
-        _global_vault = LocalCTAP2KeyringBackend()
+        _global_vault = LocalTokenRing()
     return _global_vault
 
 
