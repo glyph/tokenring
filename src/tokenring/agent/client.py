@@ -28,6 +28,11 @@ class BackgroundTokenRing(KeyringBackend):
     connection: Connection | None = None
     priority: int = 25
 
+    try:
+        connection = Client(address=address, family=family, authkey=auth_key)
+    except FileNotFoundError:
+        priority = 0
+
     def realize_connection(self) -> Connection:
         """
         Create a connection if none is present.
