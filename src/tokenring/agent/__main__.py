@@ -1,10 +1,12 @@
-from multiprocessing.connection import Listener
-
-from .common import address, auth_key, family
-from pyuac import main_requires_admin  # type:ignore[import]
 import sys
+from multiprocessing.connection import Listener
+from pathlib import Path
+
+from pyuac import main_requires_admin
 
 from . import __name__ as relative_parent
+from .common import address, auth_key, family
+
 
 if sys.platform == "win32":
     from ._admin_pipe import _patch
@@ -20,13 +22,20 @@ from ..local import LocalTokenRing
 
 cmdLine = [sys.executable, "-m", relative_parent, *sys.argv[1:]]
 
+
 @main_requires_admin(
     # Since we expect to run as `-m`, sys.argv looks like __file__ to Python,
     # which means pyuac gets it wrong.
     cmdLine=cmdLine,
 )
 def main() -> None:
-    vault = LocalTokenRing().realize_vault()
+    local_ring = (
+        LocalTokenRing(location=Path(sys.argv[1]))
+        if len(sys.argv) > 1
+        else LocalTokenRing()
+    )
+
+    vault = local_ring.realize_vault()
     with Listener(address=address, family=family, authkey=auth_key) as listener:
         while True:
             with listener.accept() as conn:
