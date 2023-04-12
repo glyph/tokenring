@@ -43,10 +43,10 @@ from keyring.backend import KeyringBackend
 from keyring.util.platform_ import data_root
 
 
-from .client import NoAuthenticator
+from .fidoclient import NoAuthenticator
 
 if TYPE_CHECKING:
-    from .client import AnyCtapDevice, AnyFidoClient
+    from .fidoclient import AnyCtapDevice, AnyFidoClient
 
 
 class UnknownPurpose(Exception):
