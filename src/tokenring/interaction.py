@@ -43,7 +43,7 @@ class ConsoleInteraction(UserInteraction):
             yield None
         finally:
             self._purpose = was
-        print("\N{CHECK MARK}", completed, file=sys.stderr)
+        print("OK:", completed, file=sys.stderr)
 
     def prompt_up(self) -> None:
         """
