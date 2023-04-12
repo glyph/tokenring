@@ -46,15 +46,15 @@ class BackgroundTokenRing(KeyringBackend):
         for word in words:
             conn.send_bytes(word.encode("utf-8"))
         ok = conn.recv_bytes()
-        if ok == b'y':
+        if ok == b"y":
             return conn.recv_bytes().decode("utf-8")
         else:
             return None
 
     def get_password(self, servicename: str, username: str) -> str | None:
-        print("Waiting for agent…",file=sys.stderr)
+        print("Waiting for agent…", file=sys.stderr)
         return self.multisend(["get", servicename, username])
 
     def set_password(self, servicename: str, username: str, password: str) -> None:
-        print("Waiting for agent…",file=sys.stderr)
+        print("Waiting for agent…", file=sys.stderr)
         self.multisend(["set", servicename, username, password])

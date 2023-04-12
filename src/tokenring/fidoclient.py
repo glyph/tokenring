@@ -53,6 +53,7 @@ except ImportError:
 if TYPE_CHECKING:
     AnyCtapDevice = CtapHidDevice | CtapPcscDevice
 
+
 def enumerate_devices() -> Iterable[AnyCtapDevice]:
     yield from CtapHidDevice.list_devices()
     if have_pcsc:
@@ -64,9 +65,11 @@ class NoAuthenticator(Exception):
     Could not find an authenticator.
     """
 
+
 AnyFidoClient = Fido2Client | WindowsClient
 
 fake_url = "https://hardware.keychain.glyph.im"
+
 
 def enumerate_clients(
     interaction: UserInteraction,
@@ -99,7 +102,9 @@ def extension_required(client: AnyFidoClient) -> bool:
 def select_client(
     interaction: UserInteraction,
     filters: Sequence[Callable[[AnyFidoClient], bool]],
-    choose: Callable[[Sequence[tuple[AnyFidoClient, AnyCtapDevice | None]]], AnyFidoClient],
+    choose: Callable[
+        [Sequence[tuple[AnyFidoClient, AnyCtapDevice | None]]], AnyFidoClient
+    ],
 ) -> AnyFidoClient:
     """
     Prompt the user to choose a device to authenticate with, if necessary.
@@ -113,5 +118,3 @@ def select_client(
     if len(eligible) == 1:
         return eligible[0][0]
     return choose(eligible)
-
-

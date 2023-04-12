@@ -9,11 +9,13 @@ keyringdir.mkdir(parents=True, exist_ok=True)
 
 if win32_edition() is not None:
     from getpass import getuser
-    family = 'AF_PIPE'
-    address = fr"\\.\pipe\{getuser()}-TokenVault"
+
+    family = "AF_PIPE"
+    address = rf"\\.\pipe\{getuser()}-TokenVault"
 else:
     from getpass import getuser
-    family = 'AF_UNIX'
+
+    family = "AF_UNIX"
     address = (keyringdir / "tokenring.socket").as_posix()
 
 secret_path = keyringdir / "tokenring.socket-secret"

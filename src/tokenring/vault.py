@@ -134,13 +134,18 @@ class Vault:
         while True:
             client = select_client(interaction, [extension_required], console_chooser)
             try:
-                with interaction.purpose(f"open the vault at {where.as_posix()}", "vault open!"):
+                with interaction.purpose(
+                    f"open the vault at {where.as_posix()}", "vault open!"
+                ):
                     return cls.deserialize(interaction, client, contents, where)
 
             except ClientError as ce:
                 if ce.code != ClientError.ERR.DEVICE_INELIGIBLE:
                     raise ce
-                print("This is the wrong authenticator.  Try touching a different one.",file=sys.stderr)
+                print(
+                    "This is the wrong authenticator.  Try touching a different one.",
+                    file=sys.stderr,
+                )
 
     def save(self) -> None:
         """
@@ -184,8 +189,7 @@ class Vault:
             return None
         handle, ciphertext = self.handles[key]
         with self.interaction.purpose(
-            f"decrypt the password for {servicename}/{username}",
-            "password decrypted!"
+            f"decrypt the password for {servicename}/{username}", "password decrypted!"
         ):
             plaintext = handle.decrypt_text(ciphertext)
         return plaintext
