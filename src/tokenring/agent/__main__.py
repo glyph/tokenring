@@ -18,11 +18,13 @@ from ..local import LocalTokenRing
 
 # https://github.com/Yubico/python-fido2/issues/185
 
+cmdLine = [sys.executable, "-m", f"{relative_parent}.agent"]
+
 
 @main_requires_admin(
     # Since we expect to run as `-m`, sys.argv looks like __file__ to Python,
     # which means pyuac gets it wrong.
-    cmdLine=[sys.executable, "-m", f"{relative_parent}.agent"]
+    cmdLine=cmdLine,
 )
 def main() -> None:
     vault = LocalTokenRing().realize_vault()
@@ -63,4 +65,4 @@ if __name__ == "__main__":
         main()
     except BaseException:
         print_exc()
-        input("hit 'enter' to terminate process\n")
+    input("hit 'enter' to terminate process\n")
