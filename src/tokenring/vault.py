@@ -164,7 +164,7 @@ class Vault:
 
     def set_password(self, servicename: str, username: str, password: str) -> None:
         """
-        Store a password for the tiven service and username.
+        Encrypt and store a password for the given service and username.
         """
         handle = KeyHandle.new(self.vault_handle.credential)
         with self.interaction.purpose(
@@ -174,11 +174,14 @@ class Vault:
         self.handles[servicename, username] = (handle, ciphertext)
         self.save()
 
-    def get_password(self, servicename: str, username: str) -> str:
+    def get_password(self, servicename: str, username: str) -> str | None:
         """
-        Retrieve a password.
+        Retrieve a password for the .
         """
-        handle, ciphertext = self.handles[servicename, username]
+        key = (servicename, username)
+        if key not in self.handles:
+            return None
+        handle, ciphertext = self.handles[key]
         with self.interaction.purpose(
             f"decrypt the password for {servicename}/{username}"
         ):

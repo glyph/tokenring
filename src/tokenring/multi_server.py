@@ -1,6 +1,6 @@
 from multiprocessing.connection import Listener
 
-from .multi_common import address, auth_key, family
+from .agent_common import address, auth_key, family
 from pyuac import main_requires_admin  # type:ignore[import]
 import sys
 from importlib import import_module
@@ -20,7 +20,7 @@ if sys.platform == "win32":
 @main_requires_admin(
     # Since we expect to run as `-m`, sys.argv looks like __file__ to Python,
     # which means pyuac gets it wrong.
-    cmdLine=[sys.executable, "-m", f"{relative_parent}.multi_server"]
+    cmdLine=[sys.executable, "-m", f"{relative_parent}.agent"]
 )
 def main() -> None:
     with Listener(address=address, family=family, authkey=auth_key) as listener:
@@ -34,7 +34,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    sys.exit()
     from sys import argv
     from traceback import print_exc
     try:

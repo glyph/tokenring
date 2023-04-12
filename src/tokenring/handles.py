@@ -39,6 +39,7 @@ from fido2.webauthn import (
     PublicKeyCredentialRpEntity,
     PublicKeyCredentialType,
     PublicKeyCredentialUserEntity,
+    UserVerificationRequirement,
 )
 from keyring.backend import KeyringBackend
 from keyring.util.platform_ import data_root
@@ -107,7 +108,9 @@ class CredentialHandle:
 
     def key_from_salt(self, salt) -> bytes:
         """
-        get the actual secret key from the hardware
+        Get the actual secret key from the hardware.
+
+        Note that this requires user verification.
         """
         allow_list = [
             PublicKeyCredentialDescriptor(
