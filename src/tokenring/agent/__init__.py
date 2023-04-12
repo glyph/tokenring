@@ -1,6 +1,6 @@
 from multiprocessing.connection import Listener
 
-from .agent_common import address, auth_key, family
+from .common import address, auth_key, family
 from pyuac import main_requires_admin  # type:ignore[import]
 import sys
 from importlib import import_module

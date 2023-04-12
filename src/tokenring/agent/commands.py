@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .local import LocalTokenRing
+from ..local import LocalTokenRing
 
 
 _global_vault: LocalTokenRing | None = None

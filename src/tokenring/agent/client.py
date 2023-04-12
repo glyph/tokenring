@@ -4,8 +4,8 @@ from typing import Callable
 
 from keyring.backend import KeyringBackend
 
-from .agent_common import address, auth_key, family
-from .agent_commands import GetPassword, SetPassword
+from .common import address, auth_key, family
+from .commands import GetPassword, SetPassword
 
 
 @dataclass
