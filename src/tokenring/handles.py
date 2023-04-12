@@ -1,37 +1,17 @@
 from __future__ import annotations
 
 import os
-import sys
 from base64 import urlsafe_b64encode as encode_fernet_key
-from contextlib import contextmanager
 from dataclasses import dataclass
-from getpass import getpass
-from json import dump, dumps, load, loads
-from os import fsync
-from pathlib import Path
-from threading import Event, Thread
 from typing import (
-    Callable,
     ClassVar,
-    IO,
-    Iterable,
-    Iterator,
-    List,
-    NoReturn,
-    Optional,
     Sequence,
-    TYPE_CHECKING,
     TypedDict,
 )
-from uuid import uuid4
 
 from cryptography.fernet import Fernet
 from fido2.cose import ES256
-from fido2.ctap2.pin import ClientPin
-from fido2.hid import CtapHidDevice
 from fido2.webauthn import (
-    AttestedCredentialData,
-    AuthenticatorAttestationResponse,
     PublicKeyCredentialCreationOptions,
     PublicKeyCredentialDescriptor,
     PublicKeyCredentialParameters,
@@ -39,13 +19,9 @@ from fido2.webauthn import (
     PublicKeyCredentialRpEntity,
     PublicKeyCredentialType,
     PublicKeyCredentialUserEntity,
-    UserVerificationRequirement,
 )
-from keyring.backend import KeyringBackend
-from keyring.util.platform_ import data_root
 
 from .fidoclient import AnyFidoClient
-from fido2.client import ClientError, Fido2Client, UserInteraction, WindowsClient
 
 
 SerializedCredentialHandle = dict[str, str]

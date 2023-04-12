@@ -3,7 +3,6 @@ from multiprocessing.connection import Listener
 from .common import address, auth_key, family
 from pyuac import main_requires_admin  # type:ignore[import]
 import sys
-from importlib import import_module
 
 from . import __name__ as relative_parent
 
@@ -58,7 +57,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    from sys import argv
     from traceback import print_exc
 
     try:

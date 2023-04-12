@@ -1,7 +1,6 @@
 import sys
 from dataclasses import dataclass
 from multiprocessing.connection import Client, Connection
-from typing import Callable
 
 from keyring.backend import KeyringBackend
 

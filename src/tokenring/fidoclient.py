@@ -1,46 +1,14 @@
 from __future__ import annotations
 
-import os
-import sys
-from contextlib import contextmanager
-from dataclasses import dataclass
-from getpass import getpass
-from json import dump, dumps, load, loads
-from os import fsync
-from pathlib import Path
-from threading import Event, Thread
 from typing import (
     Callable,
-    ClassVar,
-    IO,
     Iterable,
-    Iterator,
-    List,
-    NoReturn,
-    Optional,
     Sequence,
     TYPE_CHECKING,
-    TypedDict,
 )
-from uuid import uuid4
 
-from fido2.client import ClientError, Fido2Client, UserInteraction, WindowsClient
-from fido2.cose import ES256
-from fido2.ctap2.pin import ClientPin
+from fido2.client import Fido2Client, UserInteraction, WindowsClient
 from fido2.hid import CtapHidDevice
-from fido2.webauthn import (
-    AttestedCredentialData,
-    AuthenticatorAttestationResponse,
-    PublicKeyCredentialCreationOptions,
-    PublicKeyCredentialDescriptor,
-    PublicKeyCredentialParameters,
-    PublicKeyCredentialRequestOptions,
-    PublicKeyCredentialRpEntity,
-    PublicKeyCredentialType,
-    PublicKeyCredentialUserEntity,
-)
-from keyring.backend import KeyringBackend
-from keyring.util.platform_ import data_root
 import ctypes
 
 try:
