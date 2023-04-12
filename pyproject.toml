@@ -16,5 +16,5 @@ classifiers = [
 ]
 
 [project.entry-points."keyring.backends"]
-tokenlocal = "tokenring.local"
-tokenbackground = "tokenring.agent_client"
+tokenring_local = "tokenring.local"
+tokenring_agent = "tokenring.agent.client"
