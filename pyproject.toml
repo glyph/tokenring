@@ -15,6 +15,9 @@ classifiers = [
 "Programming Language :: Python :: 3 :: Only",
 ]
 
+[project.scripts]
+tokenring-agent = "tokenring.agent.__main__:main"
+
 [project.entry-points."keyring.backends"]
 tokenring_local = "tokenring.local"
 tokenring_agent = "tokenring.agent.client"
