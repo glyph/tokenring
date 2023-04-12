@@ -19,7 +19,6 @@ from ..local import LocalTokenRing
 # https://github.com/Yubico/python-fido2/issues/185
 
 cmdLine = [sys.executable, "-m", relative_parent, *sys.argv[1:]]
-print(cmdLine)
 
 @main_requires_admin(
     # Since we expect to run as `-m`, sys.argv looks like __file__ to Python,
