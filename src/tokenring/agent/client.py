@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass
 from multiprocessing.connection import Client, Connection
 from typing import Callable
@@ -5,7 +6,6 @@ from typing import Callable
 from keyring.backend import KeyringBackend
 
 from .common import address, auth_key, family
-from .commands import GetPassword, SetPassword
 
 
 @dataclass
@@ -18,7 +18,7 @@ class BackgroundTokenRing(KeyringBackend):
            until we address the issue described in L{tokenring._admin_pipe}
 
         2. to reduce the number of user-presence checks when repeated
-           authentications are require. Specifically, the vault itself needs a
+           authentications are require.  Specifically, the vault itself needs a
            UP/PIN check for unlock, but then, each credential will also need a
            UP check.  With a background helper, you can unlock the vault for a
            session and only touch the key once for each credential rather than
@@ -41,12 +41,20 @@ class BackgroundTokenRing(KeyringBackend):
             self.connection = Client(address=address, family=family, authkey=auth_key)
         return self.connection
 
-    def get_password(self, servicename: str, username: str) -> str:
+    def multisend(self, words: list[str]) -> str | None:
         conn = self.realize_connection()
-        conn.send(GetPassword(servicename, username))
-        return conn.recv()
+        for word in words:
+            conn.send_bytes(word.encode("utf-8"))
+        ok = conn.recv_bytes()
+        if ok == b'y':
+            return conn.recv_bytes().decode("utf-8")
+        else:
+            return None
+
+    def get_password(self, servicename: str, username: str) -> str | None:
+        print("Waiting for agent…",file=sys.stderr)
+        return self.multisend(["get", servicename, username])
 
     def set_password(self, servicename: str, username: str, password: str) -> None:
-        conn = self.realize_connection()
-        conn.send(SetPassword(servicename, username, password))
-        return conn.recv()
+        print("Waiting for agent…",file=sys.stderr)
+        self.multisend(["set", servicename, username, password])

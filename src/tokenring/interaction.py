@@ -60,7 +60,7 @@ class ConsoleInteraction(UserInteraction):
     _purpose: str | None = None
 
     @contextmanager
-    def purpose(self, description: str) -> Iterator[None]:
+    def purpose(self, description: str, completed: str) -> Iterator[None]:
         """
         Temporarily set the purpose of this interaction.  Any prompts that
         occur without a purpose will raise an exception.
@@ -70,6 +70,7 @@ class ConsoleInteraction(UserInteraction):
             yield None
         finally:
             self._purpose = was
+        print("✅",completed,file=sys.stderr)
 
     def prompt_up(self) -> None:
         """
@@ -77,7 +78,7 @@ class ConsoleInteraction(UserInteraction):
         """
         if self._purpose is None:
             raise UnknownPurpose()
-        print(f"Touch your authenticator to {self._purpose}")
+        print(f"Touch your authenticator to {self._purpose}",file=sys.stderr)
 
     def request_pin(
         self, permissions: ClientPin.PERMISSION, rp_id: Optional[str]
@@ -101,7 +102,7 @@ def console_chooser(
     """
     for idx, (client, device) in enumerate(clients):
         print(
-            f"{1+idx}) {getattr(device, 'product_name')} {getattr(device, 'serial_number')} {getattr(getattr(device, 'descriptor', None), 'path', None)}"
+            f"{1+idx}) {getattr(device, 'product_name')} {getattr(device, 'serial_number')} {getattr(getattr(device, 'descriptor', None), 'path', None)}",file=sys.stderr
         )
 
     while True:
@@ -109,12 +110,12 @@ def console_chooser(
         try:
             result = int(value)
         except ValueError:
-            print("Please enter a number.")
+            print("Please enter a number.",file=sys.stderr)
         else:
             try:
                 return clients[result - 1][0]
             except IndexError:
-                print("Please enter a number in range.")
+                print("Please enter a number in range.",file=sys.stderr)
 
 
 def up_chooser(clients: Sequence[AnyFidoClient]) -> AnyFidoClient:

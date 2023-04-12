@@ -70,7 +70,7 @@ class LocalTokenRing(KeyringBackend):
             self.vault = Vault.create(self.location)
         return self.vault
 
-    def get_password(self, servicename: str, username: str) -> str:
+    def get_password(self, servicename: str, username: str) -> str | None:
         return self.realize_vault().get_password(servicename, username)
 
     def set_password(self, servicename: str, username: str, password: str) -> None:

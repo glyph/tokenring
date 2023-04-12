@@ -113,10 +113,10 @@ class Vault:
         """
         interaction = ConsoleInteraction()
         client = select_client(interaction, [extension_required], console_chooser)
-        with interaction.purpose("create the vault"):
+        with interaction.purpose("create the vault", "vault created!"):
             cred = CredentialHandle.new_credential(client)
         vault_key = KeyHandle.new(cred)
-        with interaction.purpose("open the vault we just created"):
+        with interaction.purpose("open the vault we just created", "vault open!"):
             vault_key.remember_key()
         self = Vault(interaction, client, vault_key, {}, where.absolute())
         self.save()
@@ -134,13 +134,13 @@ class Vault:
         while True:
             client = select_client(interaction, [extension_required], console_chooser)
             try:
-                with interaction.purpose(f"open the vault at {where.as_posix()}"):
+                with interaction.purpose(f"open the vault at {where.as_posix()}", "vault open!"):
                     return cls.deserialize(interaction, client, contents, where)
 
             except ClientError as ce:
                 if ce.code != ClientError.ERR.DEVICE_INELIGIBLE:
                     raise ce
-                print("This is the wrong authenticator.  Try touching a different one.")
+                print("This is the wrong authenticator.  Try touching a different one.",file=sys.stderr)
 
     def save(self) -> None:
         """
@@ -168,11 +168,12 @@ class Vault:
         """
         handle = KeyHandle.new(self.vault_handle.credential)
         with self.interaction.purpose(
-            f"encrypt the password for {servicename}/{username}"
+            f"encrypt the password for {servicename}/{username}",
+            "password encrypted and stored!",
         ):
             ciphertext = handle.encrypt_text(password)
-        self.handles[servicename, username] = (handle, ciphertext)
-        self.save()
+            self.handles[servicename, username] = (handle, ciphertext)
+            self.save()
 
     def get_password(self, servicename: str, username: str) -> str | None:
         """
@@ -183,7 +184,8 @@ class Vault:
             return None
         handle, ciphertext = self.handles[key]
         with self.interaction.purpose(
-            f"decrypt the password for {servicename}/{username}"
+            f"decrypt the password for {servicename}/{username}",
+            "password decrypted!"
         ):
             plaintext = handle.decrypt_text(ciphertext)
         return plaintext
