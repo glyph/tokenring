@@ -18,7 +18,7 @@ from ..local import LocalTokenRing
 
 # https://github.com/Yubico/python-fido2/issues/185
 
-cmdLine = [sys.executable, "-m", f"{relative_parent}.agent"]
+cmdLine = [sys.executable, "-m", relative_parent, *sys.argv[1:]]
 print(cmdLine)
 
 @main_requires_admin(
