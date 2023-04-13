@@ -85,11 +85,21 @@ one extra time per process in that case, to unlock the vault.
 ``pipx install tokenring``, and run ``tokenring agent path/to/your/tokenring.vault``.
 
 
-Step 3: call ``keyring.set_password`` and ``keyring.get_password``.
----------------------------------------------------------------------
+Step 3: call ``keyring.set_password`` and ``keyring.get_password`` in whatever application you'd like to use
+-------------------------------------------------------------------------------------------------------------
 
 If the ``keyring`` command on your shell's ``PATH`` is in an environment with
-``tokenring`` installed, you can just use ``keyring set`` and ``keyring get``,
-but as a convenience, to make sure you're inspecting ``tokenring`` directly, 
+``tokenring`` installed, you can just use ``keyring set`` and ``keyring get``
+to test this, but as a convenience, to make sure you're inspecting
+``tokenring`` directly, you can use the ``tokenring set`` and ``tokenring get``
+commands, which behave similarly but will never use any other keyring backend.
 
-However, as a convenience
+To use Twine with a secret stored in ``tokenring``, for example, the full
+workflow would be:
+
+1. open a terminal and run ``tokenring agent my.vault``
+2. create a token at https://pypi.org/manage/account/token/
+3. open a terminal and run ``tokenring set https://upload.pypi.org/legacy/
+   __token__``, then paste your token when prompted
+4. in whatever project you'd like to upload, ``TWINE_USERNAME=__token__ twine
+   upload dist/*``
