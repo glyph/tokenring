@@ -33,8 +33,6 @@ def token_ring() -> BackgroundTokenRing | LocalTokenRing:
 @click.group()
 def cli():
     ...
-    print("CLI?", argv)
-    input()
 
 @cli.command()
 @click.argument('servicename')
