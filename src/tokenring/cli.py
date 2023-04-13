@@ -30,9 +30,12 @@ def token_ring() -> BackgroundTokenRing | LocalTokenRing:
     else:
         return LocalTokenRing()
 
+from sys import argv
 @click.group()
 def cli():
     ...
+    print("CLI?", argv)
+    input()
 
 @cli.command()
 @click.argument('servicename')
@@ -51,7 +54,6 @@ def set(servicename: str, username: str) -> None:
 click_path = click.Path(path_type=Path)  # type:ignore[type-var]
 # type ignore here seems to be just a bug in types-click?
 
-from sys import argv
 print("WHAT", argv)
 @cli.command()
 @click.argument("vault_path", required=False, type=click_path)
