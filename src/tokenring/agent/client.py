@@ -1,10 +1,21 @@
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass
 from multiprocessing.connection import Client, Connection
+from typing import Iterator
 
 from keyring.backend import KeyringBackend
 
 from .common import address, auth_key, family
+
+
+@contextmanager
+def show_waiting() -> Iterator[None]:
+    print("Waiting for agent…", file=sys.stderr, end="", flush=True)
+    try:
+        yield
+    finally:
+        print("OK", file=sys.stderr, flush=True)
 
 
 @dataclass
@@ -52,9 +63,9 @@ class BackgroundTokenRing(KeyringBackend):
             return None
 
     def get_password(self, servicename: str, username: str) -> str | None:
-        print("Waiting for agent…", file=sys.stderr)
-        return self.multisend(["get", servicename, username])
+        with show_waiting():
+            return self.multisend(["get", servicename, username])
 
     def set_password(self, servicename: str, username: str, password: str) -> None:
-        print("Waiting for agent…", file=sys.stderr)
-        self.multisend(["set", servicename, username, password])
+        with show_waiting():
+            self.multisend(["set", servicename, username, password])

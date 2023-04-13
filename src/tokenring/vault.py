@@ -143,7 +143,7 @@ class Vault:
         """
         handle = KeyHandle.new(self.vault_handle.credential)
         with self.interaction.purpose(
-            f"encrypt the password for {servicename}/{username}",
+            f"encrypt the password for {username!r} in {servicename!r}",
             "password encrypted and stored!",
         ):
             ciphertext = handle.encrypt_text(password)
@@ -156,11 +156,12 @@ class Vault:
         """
         key = (servicename, username)
         if key not in self.handles:
+            print(f"No entry for {username!r} in {servicename!r}, not prompting", file=sys.stderr)
             return None
         handle, ciphertext = self.handles[key]
         try:
             with self.interaction.purpose(
-                f"decrypt the password for {servicename}/{username}",
+                f"decrypt the password for {username!r} in {servicename!r}",
                 "password decrypted!",
             ):
                 plaintext = handle.decrypt_text(ciphertext)

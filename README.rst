@@ -69,8 +69,9 @@ hard-token to access every time.
 
 For example, let's say you upload all your packages with twine.  First, install
 twine itself with `pipx <https://pypa.github.io/pipx/>`_ so it gets its own
-dedicated virtual environment.  Then, ``pipx inject twine tokenring`` and
-``twine`` will always use ``tokenring`` as a backend.
+dedicated virtual environment.  Then, ``pipx inject twine --include-apps
+tokenring``; since this always injects ``keyring`` as well, ``twine`` will
+always use ``tokenring`` as a backend.
 
 Step 2: run the agent
 ----------------------
@@ -81,7 +82,14 @@ application as an administrator.  On other platforms, it'll fall back to local
 access within the requesting process, but you'll have to tap your authenticator
 one extra time per process in that case, to unlock the vault.
 
-``pipx install tokenring``, and run ``tokenring-agent path/to/your/tokenring.vault``.
+``pipx install tokenring``, and run ``tokenring agent path/to/your/tokenring.vault``.
+
 
 Step 3: call ``keyring.set_password`` and ``keyring.get_password``.
 ---------------------------------------------------------------------
+
+If the ``keyring`` command on your shell's ``PATH`` is in an environment with
+``tokenring`` installed, you can just use ``keyring set`` and ``keyring get``,
+but as a convenience, to make sure you're inspecting ``tokenring`` directly, 
+
+However, as a convenience
