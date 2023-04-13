@@ -75,4 +75,11 @@ dedicated virtual environment.  Then, ``pipx inject twine tokenring`` and
 Step 2: run the agent
 ----------------------
 
-``pipx install tokenring``
+This is currently mandatory on Windows due to `this issue
+<https://github.com/glyph/tokenring/issues/1>`_ unless you are running your
+application as an administrator.  On other platforms, it'll fall back to local
+access within the requesting process, but you'll have to tap your authenticator
+one extra time per process in that case, to unlock the vault.
+
+``pipx install tokenring``, and run ``tokenring-agent
+path/to/your/tokenring.vault``.
