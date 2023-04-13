@@ -6,6 +6,7 @@ dependencies = [
   "cryptography",
   "keyring",
   "pyuac",
+  "click",
   "pywin32; os_name=='nt'",
 ]
 
@@ -30,7 +31,7 @@ dev = [
 ]
 
 [project.scripts]
-tokenring-agent = "tokenring.agent.__main__:main"
+tokenring = "tokenring.cli:cli"
 
 [project.entry-points."keyring.backends"]
 tokenring_local = "tokenring.local"

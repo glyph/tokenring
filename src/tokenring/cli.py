@@ -1,12 +1,14 @@
 import sys
+from getpass import getpass
 from multiprocessing.connection import Listener
 from pathlib import Path
 
-from pyuac import main_requires_admin
+from pyuac import main_requires_admin  # type:ignore[import]
 
-from . import __name__ as relative_parent
-from .common import address, auth_key, family
+import click
 
+from .agent.common import address, auth_key, family
+from .agent.client import BackgroundTokenRing
 
 if sys.platform == "win32":
     from ._admin_pipe import _patch
@@ -14,24 +16,49 @@ if sys.platform == "win32":
     _patch()
 
 
-from ..local import LocalTokenRing
+from .local import LocalTokenRing
 
-# direct USB HID access because of this bug:
+# Windows requires administrator access in order to access the hmac-secret
+# extension on the hard token, to get direct USB HID access to the device,
+# because of this bug:
 
 # https://github.com/Yubico/python-fido2/issues/185
 
-cmdLine = [sys.executable, "-m", relative_parent, *sys.argv[1:]]
+def token_ring() -> BackgroundTokenRing | LocalTokenRing:
+    if BackgroundTokenRing.connection is not None:
+        return BackgroundTokenRing()
+    else:
+        return LocalTokenRing()
+
+@click.group()
+def cli():
+    ...
+
+@cli.command()
+@click.argument('servicename')
+@click.argument('username')
+def get(servicename: str, username: str) -> None:
+    click.echo(token_ring().get_password(servicename, username))
+
+@cli.command()
+@click.argument('servicename')
+@click.argument('username')
+def set(servicename: str, username: str) -> None:
+    password = getpass(f"Password for '{username}' in '{servicename}': ")
+    token_ring().set_password(servicename, username, password)
 
 
-@main_requires_admin(
-    # Since we expect to run as `-m`, sys.argv looks like __file__ to Python,
-    # which means pyuac gets it wrong.
-    cmdLine=cmdLine,
-)
-def main() -> None:
+click_path = click.Path(path_type=Path)  # type:ignore[type-var]
+# type ignore here seems to be just a bug in types-click?
+
+@cli.command()
+@click.argument("vault_path", required=False, type=click_path)
+@main_requires_admin()
+def agent(vault_path: Path | None) -> None:
+
     local_ring = (
-        LocalTokenRing(location=Path(sys.argv[1]))
-        if len(sys.argv) > 1
+        LocalTokenRing(location=vault_path)
+        if vault_path is not None
         else LocalTokenRing()
     )
 
@@ -64,13 +91,3 @@ def main() -> None:
                             vault.set_password(servicename, username, password)
                             password = None
                             conn.send_bytes(b"n")
-
-
-if __name__ == "__main__":
-    from traceback import print_exc
-
-    try:
-        main()
-    except BaseException:
-        print_exc()
-    input("hit 'enter' to terminate process\n")

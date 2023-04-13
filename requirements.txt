@@ -8,6 +8,8 @@ build==0.10.0
     # via tokenring (pyproject.toml)
 cffi==1.15.1
     # via cryptography
+click==8.1.3
+    # via tokenring (pyproject.toml)
 cryptography==40.0.1
     # via
     #   fido2
