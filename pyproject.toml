@@ -1,6 +1,13 @@
 [project]
 name = "tokenring"
 version = "2023.4.10"
+dependencies = [
+  "fido2",
+  "cryptography",
+  "keyring",
+  "pyuac",
+  "pywin32; os_name=='nt'",
+]
 
 [metadata]
 author = "Glyph"
@@ -13,6 +20,12 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy",
+  "types-pywin32",
 ]
 
 [project.scripts]
