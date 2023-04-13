@@ -1,6 +1,1 @@
-fido2
-cryptography
-keyring
-mypy
-pyuac
-types-pywin32
+-e .[dev]
