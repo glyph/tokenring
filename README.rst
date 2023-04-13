@@ -81,5 +81,7 @@ application as an administrator.  On other platforms, it'll fall back to local
 access within the requesting process, but you'll have to tap your authenticator
 one extra time per process in that case, to unlock the vault.
 
-``pipx install tokenring``, and run ``tokenring-agent
-path/to/your/tokenring.vault``.
+``pipx install tokenring``, and run ``tokenring-agent path/to/your/tokenring.vault``.
+
+Step 3: call ``keyring.set_password`` and ``keyring.get_password``.
+---------------------------------------------------------------------
