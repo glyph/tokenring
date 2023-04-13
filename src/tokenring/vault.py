@@ -158,10 +158,18 @@ class Vault:
         if key not in self.handles:
             return None
         handle, ciphertext = self.handles[key]
-        with self.interaction.purpose(
-            f"decrypt the password for {servicename}/{username}", "password decrypted!"
-        ):
-            plaintext = handle.decrypt_text(ciphertext)
+        try:
+            with self.interaction.purpose(
+                f"decrypt the password for {servicename}/{username}",
+                "password decrypted!",
+            ):
+                plaintext = handle.decrypt_text(ciphertext)
+        except ClientError as ce:
+            if ce.code == ClientError.ERR.TIMEOUT:
+                print("User presence check timed out.", file=sys.stderr)
+                return None
+            raise ce
+
         return plaintext
 
     def delete_password(self, servicename: str, username: str) -> None:
