@@ -11,7 +11,7 @@ from .agent.common import address, auth_key, family
 from .agent.client import BackgroundTokenRing
 
 if sys.platform == "win32":
-    from ._admin_pipe import _patch
+    from .agent._admin_pipe import _patch
 
     _patch()
 
