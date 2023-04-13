@@ -24,6 +24,7 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
+  "build",
   "mypy",
   "types-pywin32",
 ]

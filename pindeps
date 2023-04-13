@@ -1,0 +1,3 @@
+#!/bin/sh
+
+pip-compile --resolver=backtracking --no-emit-index-url --extra=dev
