@@ -41,7 +41,6 @@ class BackgroundTokenRing(KeyringBackend):
     try:
         connection = Client(address=address, family=family, authkey=auth_key)
     except FileNotFoundError:
-        print("Could not connect to TokenRing agent", file=sys.stderr)
         priority = 0
 
     def realize_connection(self) -> Connection:

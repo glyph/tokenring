@@ -103,9 +103,13 @@ class Vault:
         interaction = ConsoleInteraction()
         while True:
             client = select_client(interaction, [extension_required], console_chooser)
+            dispath = where.as_posix()
+            homepath = Path.home().as_posix() + "/"
+            if dispath.startswith(homepath):
+                dispath = "~/" + dispath[len(homepath):]
             try:
                 with interaction.purpose(
-                    f"open the vault at {where.as_posix()}", "vault open!"
+                    f"open the vault at {dispath}", "vault open!"
                 ):
                     return cls.deserialize(interaction, client, contents, where)
 
