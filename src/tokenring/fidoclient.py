@@ -42,7 +42,7 @@ def enumerate_clients(
     if WindowsClient.is_available():
         is_admin: bool = ctypes.windll.shell32.IsUserAnAdmin()  # type:ignore
         if not is_admin:
-            yield (WindowsClient(fake_url), None)
+            yield (WindowsClient(fake_url, allow_hmac_secret=True), None)
             return
     for dev in enumerate_devices():
         yield (
