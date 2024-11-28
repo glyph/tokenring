@@ -26,6 +26,20 @@ from .fidoclient import AnyFidoClient
 
 SerializedCredentialHandle = dict[str, str]
 
+def platform_specific_extract_extension_results(results: Any)->bytes:
+    """
+    There's a bug in python-fido2 which reflects extension output values as
+    literal dictionaries full of bytes on Windows (which is what it used to do
+    everywhere) and magical dict-proxy-but-also-has-some-attributes objects on
+    all other platforms, where the other platforms reflect the dict-ish values
+    as base64-encoded strings and the extra attributes they provide (but do not
+    provide type annotations for) are the original bytes.
+    """
+    if os.name == 'nt':
+        return results["hmacGetSecret"]["output1"]
+    else:
+        return results.hmacGetSecret.output1
+
 
 @dataclass
 class CredentialHandle:
@@ -105,7 +119,7 @@ class CredentialHandle:
         assertion_itself = self.client.get_assertion(options)
         assertion_result: Any = assertion_itself.get_response(0)
         assert assertion_result.extension_results is not None
-        output1: bytes = assertion_result.extension_results.hmacGetSecret.output1
+        output1: bytes = platform_specific_extract_extension_results(assertion_result.extension_results)
         return output1
 
     def serialize(self) -> SerializedCredentialHandle:
