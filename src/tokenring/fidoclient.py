@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from typing import (
-    Callable,
-    Iterable,
-    Sequence,
-    TYPE_CHECKING,
-)
+import ctypes
+from typing import TYPE_CHECKING, Callable, Iterable, Sequence
 
 from fido2.client import Fido2Client, UserInteraction, WindowsClient
+from fido2.ctap2.extensions import HmacSecretExtension
 from fido2.hid import CtapHidDevice
-import ctypes
 
 try:
     from fido2.pcsc import CtapPcscDevice
@@ -54,6 +50,7 @@ def enumerate_clients(
                 dev,
                 fake_url,
                 user_interaction=interaction,
+                extensions=[HmacSecretExtension(allow_hmac_secret=True)],
             ),
             dev,
         )
