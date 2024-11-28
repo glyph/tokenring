@@ -23,7 +23,6 @@ from fido2.webauthn import (
 
 from .fidoclient import AnyFidoClient
 
-
 SerializedCredentialHandle = dict[str, str]
 
 
