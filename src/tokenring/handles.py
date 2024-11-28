@@ -4,6 +4,7 @@ import os
 from base64 import urlsafe_b64encode as encode_fernet_key
 from dataclasses import dataclass
 from typing import (
+    Any,
     ClassVar,
     Sequence,
     TypedDict,
@@ -81,7 +82,7 @@ class CredentialHandle:
         assert credential is not None
         return CredentialHandle(client=client, credential_id=credential.credential_id)
 
-    def key_from_salt(self, salt) -> bytes:
+    def key_from_salt(self, salt: bytes) -> bytes:
         """
         Get the actual secret key from the hardware.
 
@@ -102,9 +103,9 @@ class CredentialHandle:
         )
         # Only one cred in allowList, only one response.
         assertion_itself = self.client.get_assertion(options)
-        assertion_result = assertion_itself.get_response(0)
+        assertion_result: Any = assertion_itself.get_response(0)
         assert assertion_result.extension_results is not None
-        output1 = assertion_result.extension_results["hmacGetSecret"]["output1"]
+        output1: bytes = assertion_result.extension_results.hmacGetSecret.output1
         return output1
 
     def serialize(self) -> SerializedCredentialHandle:
@@ -175,7 +176,7 @@ class KeyHandle:
         """
         Encrypt some plaintext bytes.
         """
-        key_bytes = self.key_as_bytes()
+        key_bytes: bytes = self.key_as_bytes()
         fernet_key = encode_fernet_key(key_bytes)
         fernet = Fernet(fernet_key)
         ciphertext = fernet.encrypt(plaintext)
@@ -185,7 +186,7 @@ class KeyHandle:
         """
         Decrypt some enciphered bytes.
         """
-        key_bytes = self.key_as_bytes()
+        key_bytes: bytes = self.key_as_bytes()
         fernet_key = encode_fernet_key(key_bytes)
         fernet = Fernet(fernet_key)
         plaintext = fernet.decrypt(ciphertext)
