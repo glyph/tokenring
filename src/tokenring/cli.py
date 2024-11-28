@@ -3,8 +3,6 @@ from getpass import getpass
 from multiprocessing.connection import Listener
 from pathlib import Path
 
-from pyuac import main_requires_admin  # type:ignore[import]
-
 import click
 
 from .agent.common import address, auth_key, family
@@ -55,7 +53,6 @@ from sys import argv
 real_argv = argv[:]
 @cli.command()
 @click.argument("vault_path", required=False, type=click_path)
-@main_requires_admin(cmdLine=real_argv)
 def agent(vault_path: Path | None) -> None:
 
     local_ring = (
