@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import ctypes
 from typing import TYPE_CHECKING, Callable, Iterable, Sequence
 
@@ -60,6 +61,11 @@ def extension_required(client: AnyFidoClient) -> bool:
     """
     Client filter for clients that support the hmac-secret extension.
     """
+    if os.name == 'nt':
+        # TODO: report this upstream; Windows (without administrator access, at
+        # least) reports an empty extension list, even if your device can do
+        # hmac-secret.
+        return True
     has_extension = "hmac-secret" in client.info.extensions
     return has_extension
 
