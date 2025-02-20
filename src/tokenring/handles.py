@@ -4,6 +4,7 @@ import os
 from base64 import urlsafe_b64encode as encode_fernet_key
 from dataclasses import dataclass
 from typing import (
+    Any,
     ClassVar,
     Sequence,
     TypedDict,
@@ -23,8 +24,21 @@ from fido2.webauthn import (
 
 from .fidoclient import AnyFidoClient
 
-
 SerializedCredentialHandle = dict[str, str]
+
+def platform_specific_extract_extension_results(results: Any)->bytes:
+    """
+    There's a bug in python-fido2 which reflects extension output values as
+    literal dictionaries full of bytes on Windows (which is what it used to do
+    everywhere) and magical dict-proxy-but-also-has-some-attributes objects on
+    all other platforms, where the other platforms reflect the dict-ish values
+    as base64-encoded strings and the extra attributes they provide (but do not
+    provide type annotations for) are the original bytes.
+    """
+    if os.name == 'nt':
+        return results["hmacGetSecret"]["output1"]
+    else:
+        return results.hmacGetSecret.output1
 
 
 @dataclass
@@ -82,7 +96,7 @@ class CredentialHandle:
         assert credential is not None
         return CredentialHandle(client=client, credential_id=credential.credential_id)
 
-    def key_from_salt(self, salt) -> bytes:
+    def key_from_salt(self, salt: bytes) -> bytes:
         """
         Get the actual secret key from the hardware.
 
@@ -103,9 +117,9 @@ class CredentialHandle:
         )
         # Only one cred in allowList, only one response.
         assertion_itself = self.client.get_assertion(options)
-        assertion_result = assertion_itself.get_response(0)
+        assertion_result: Any = assertion_itself.get_response(0)
         assert assertion_result.extension_results is not None
-        output1 = assertion_result.extension_results["hmacGetSecret"]["output1"]
+        output1: bytes = platform_specific_extract_extension_results(assertion_result.extension_results)
         return output1
 
     def serialize(self) -> SerializedCredentialHandle:
@@ -176,7 +190,7 @@ class KeyHandle:
         """
         Encrypt some plaintext bytes.
         """
-        key_bytes = self.key_as_bytes()
+        key_bytes: bytes = self.key_as_bytes()
         fernet_key = encode_fernet_key(key_bytes)
         fernet = Fernet(fernet_key)
         ciphertext = fernet.encrypt(plaintext)
@@ -186,7 +200,7 @@ class KeyHandle:
         """
         Decrypt some enciphered bytes.
         """
-        key_bytes = self.key_as_bytes()
+        key_bytes: bytes = self.key_as_bytes()
         fernet_key = encode_fernet_key(key_bytes)
         fernet = Fernet(fernet_key)
         plaintext = fernet.decrypt(ciphertext)

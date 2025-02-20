@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from typing import (
-    Callable,
-    Iterable,
-    Sequence,
-    TYPE_CHECKING,
-)
+import os
+import ctypes
+from typing import TYPE_CHECKING, Callable, Iterable, Sequence
 
 from fido2.client import Fido2Client, UserInteraction, WindowsClient
+from fido2.ctap2.extensions import HmacSecretExtension
 from fido2.hid import CtapHidDevice
-import ctypes
 
 try:
     from fido2.pcsc import CtapPcscDevice
@@ -46,7 +43,7 @@ def enumerate_clients(
     if WindowsClient.is_available():
         is_admin: bool = ctypes.windll.shell32.IsUserAnAdmin()  # type:ignore
         if not is_admin:
-            yield (WindowsClient(fake_url), None)
+            yield (WindowsClient(fake_url, allow_hmac_secret=True), None)
             return
     for dev in enumerate_devices():
         yield (
@@ -54,6 +51,7 @@ def enumerate_clients(
                 dev,
                 fake_url,
                 user_interaction=interaction,
+                extensions=[HmacSecretExtension(allow_hmac_secret=True)],
             ),
             dev,
         )
@@ -63,6 +61,11 @@ def extension_required(client: AnyFidoClient) -> bool:
     """
     Client filter for clients that support the hmac-secret extension.
     """
+    if os.name == 'nt':
+        # TODO: report this upstream; Windows (without administrator access, at
+        # least) reports an empty extension list, even if your device can do
+        # hmac-secret.
+        return True
     has_extension = "hmac-secret" in client.info.extensions
     return has_extension
 
