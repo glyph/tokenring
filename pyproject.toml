@@ -1,6 +1,6 @@
 [project]
 name = "tokenring"
-version = "2023.4.22"
+version = "2025.2.19"
 dependencies = [
   "fido2>=1.2.0",
   "cryptography",
