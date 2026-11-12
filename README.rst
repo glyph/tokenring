@@ -60,7 +60,7 @@ Many things which handle sensitive information do, but you might need to submit
 a patch first.
 
 Step 1: install ``tokenring`` into the environment where you're accessing extra-sensitive secrets
----------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------
 
 You probably don't want ``tokenring`` globally installed; or indeed installed
 in most of your Python environments, since it is a high-priority backend that
@@ -74,7 +74,7 @@ tokenring``; since this always injects ``keyring`` as well, ``twine`` will
 always use ``tokenring`` as a backend.
 
 Step 2: run the agent
-----------------------
+---------------------
 
 This is currently mandatory on Windows due to `this issue
 <https://github.com/glyph/tokenring/issues/1>`_ unless you are running your
@@ -86,7 +86,7 @@ one extra time per process in that case, to unlock the vault.
 
 
 Step 3: call ``keyring.set_password`` and ``keyring.get_password`` in whatever application you'd like to use
--------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
 
 If the ``keyring`` command on your shell's ``PATH`` is in an environment with
 ``tokenring`` installed, you can just use ``keyring set`` and ``keyring get``
@@ -103,3 +103,9 @@ workflow would be:
    __token__``, then paste your token when prompted
 4. in whatever project you'd like to upload, ``TWINE_USERNAME=__token__ twine
    upload dist/*``
+
+---------
+AI Policy
+---------
+
+TokenRing follows the `Twisted AI Policy <https://docs.twisted.org/en/latest/development/ai-policy.html>`_. This means this project does not allow the inclusion of the outputs of generative AI tools.
